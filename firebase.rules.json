@@ -29,6 +29,16 @@
           ".write": "auth != null"
         }
       }
+    },
+    "teamVotes": {
+      "$activityId": {
+        ".read": "auth != null",
+        "$teamId": {
+          "$studentId": {
+            ".write": "auth != null && !data.exists()"
+          }
+        }
+      }
     }
   }
 }

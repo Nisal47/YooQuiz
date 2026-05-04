@@ -1,30 +1,29 @@
-import { useState, useEffect }        from 'react'
-import { useNavigate }                from 'react-router-dom'
-import { ensureAuth }                 from '../firebase/config'
+import { useState, useEffect }          from 'react'
+import { useNavigate }                  from 'react-router-dom'
+import { ensureAuth }                   from '../firebase/config'
 import { createSession, updateSession, setCurrentActivity } from '../firebase/sessionService'
-import {
-  createActivity, updateActivity, deleteActivity,
-  launchActivity, closeActivity,
-} from '../firebase/activityService'
-import { useSession }      from '../hooks/useSession'
-import { useActivities }   from '../hooks/useActivity'
-import { useLeaderboard }  from '../hooks/useLeaderboard'
-import SessionLobby        from '../components/teacher/SessionLobby'
-import QuizBuilder         from '../components/teacher/QuizBuilder'
-import QuestionController  from '../components/teacher/QuestionController'
-import Leaderboard         from '../components/teacher/Leaderboard'
+import { createTeamEvalActivity, updateActivity, deleteActivity, launchActivity } from '../firebase/activityService'
+import { useSession }                   from '../hooks/useSession'
+import { useActivities }                from '../hooks/useActivity'
+import { useLeaderboard }               from '../hooks/useLeaderboard'
+import TeamVoteLobby                    from '../components/teacher/TeamVoteLobby'
+import TeamVoteBuilder                  from '../components/teacher/TeamVoteBuilder'
+import TeamEvalActivity                 from '../components/teacher/TeamEvalActivity'
+import Leaderboard                      from '../components/teacher/Leaderboard'
 
-const LS_SESSION  = 'qb_host_sessionId'
-const LS_HOST_UID = 'qb_host_uid'
-
+const LS_SESSION  = 'qb_tv_sessionId'
+const LS_HOST_UID = 'qb_tv_uid'
 const STOPPABLE_VIEWS = ['lobby', 'builder', 'controller']
 
 /**
- * Teacher state machine for the QuizBlast (MCQ quiz) module.
+ * Teacher state machine for the VoteBlast (team_evaluation) module.
  *
  *   create → lobby ↔ builder → controller → final
+ *
+ * Completely separate from HostPage (quiz).
+ * Uses different localStorage keys so quiz and team-vote sessions don't collide.
  */
-export default function HostPage() {
+export default function TeamVoteHostPage() {
   const navigate = useNavigate()
 
   const [view,         setView]         = useState('init')
@@ -44,21 +43,7 @@ export default function HostPage() {
   useEffect(() => {
     if (!sessionId) { setView('create'); return }
     if (!session) return
-
-    // Session gone from Firebase (deleted externally) — wipe the stale ID
-    if (session === null) {
-      localStorage.removeItem(LS_SESSION)
-      setSessionId(null)
-      setView('create')
-      return
-    }
-
-    if (session.status === 'ended') {
-      // Auto-clear ended session so next visit starts fresh
-      localStorage.removeItem(LS_SESSION)
-      setView('final')
-      return
-    }
+    if (session.status === 'ended') { setView('final'); return }
     if (session.status === 'active') {
       const idx = activities.findIndex(a => a.activityId === session.currentActivityId)
       if (idx >= 0) setCurrentIndex(idx)
@@ -81,15 +66,11 @@ export default function HostPage() {
     setCreatingMsg('')
   }
 
-  async function handleAddQuestion(q) {
-    await createActivity(sessionId, { ...q, order: activities.length })
+  async function handleAddTeamEval(data) {
+    await createTeamEvalActivity(sessionId, { ...data, order: activities.length })
   }
 
-  async function handleUpdateQuestion(activityId, data) {
-    await updateActivity(activityId, data)
-  }
-
-  async function handleDeleteQuestion(activityId) {
+  async function handleDeleteActivity(activityId) {
     await deleteActivity(activityId)
   }
 
@@ -102,7 +83,7 @@ export default function HostPage() {
     ])
   }
 
-  async function handleStartQuiz() {
+  async function handleStartEval() {
     if (activities.length === 0) return
     await updateSession(sessionId, { status: 'active' })
     const first = activities[0]
@@ -112,7 +93,7 @@ export default function HostPage() {
     setView('controller')
   }
 
-  async function handleNextQuestion() {
+  async function handleNext() {
     const nextIdx = currentIndex + 1
     if (nextIdx >= activities.length) return
     const next = activities[nextIdx]
@@ -121,7 +102,7 @@ export default function HostPage() {
     await setCurrentActivity(sessionId, next.activityId)
   }
 
-  async function handleEndQuiz() {
+  async function handleEndSession() {
     await updateSession(sessionId, { status: 'ended', currentActivityId: null })
     setView('final')
   }
@@ -143,21 +124,34 @@ export default function HostPage() {
     if (view === 'create' || view === 'init') {
       return (
         <div className="min-h-screen dot-grid flex flex-col items-center justify-center px-4 text-center">
-          <div className="pointer-events-none fixed top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+          <div className="pointer-events-none fixed top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#FF6B6B]/8 rounded-full blur-3xl" />
           <div className="relative z-10 space-y-6 animate-fade-in">
             <div>
-              <span className="font-orbitron font-black text-5xl text-primary text-glow-primary">Quiz</span>
-              <span className="font-orbitron font-black text-5xl text-secondary text-glow-secondary">Blast</span>
+              <span
+                className="font-orbitron font-black text-5xl text-[#FF6B6B]"
+                style={{ textShadow: '0 0 30px rgba(255,107,107,0.5)' }}
+              >
+                Vote
+              </span>
+              <span
+                className="font-orbitron font-black text-5xl text-warning"
+                style={{ textShadow: '0 0 30px rgba(255,214,10,0.5)' }}
+              >
+                Blast
+              </span>
             </div>
             <p className="text-text-secondary">Teacher Dashboard</p>
-            <button onClick={handleCreateSession} className="btn-primary font-orbitron py-4 px-10 text-lg">
+            <button
+              onClick={handleCreateSession}
+              className="btn-primary font-orbitron py-4 px-10 text-lg"
+            >
               {creatingMsg || 'Create New Session'}
             </button>
             <button
-              onClick={() => navigate('/quiz')}
+              onClick={() => navigate('/teamvote')}
               className="block text-sm text-text-secondary hover:text-white transition-colors mx-auto"
             >
-              ← Back to QuizBlast
+              ← Back to VoteBlast
             </button>
           </div>
         </div>
@@ -166,10 +160,10 @@ export default function HostPage() {
 
     if (view === 'lobby') {
       return (
-        <SessionLobby
+        <TeamVoteLobby
           session={session ?? { sessionId, code: '…' }}
           activities={activities}
-          onStartQuiz={handleStartQuiz}
+          onStartEval={handleStartEval}
           onGoToBuilder={() => setView('builder')}
         />
       )
@@ -177,11 +171,10 @@ export default function HostPage() {
 
     if (view === 'builder') {
       return (
-        <QuizBuilder
+        <TeamVoteBuilder
           activities={activities}
-          onAdd={handleAddQuestion}
-          onUpdate={handleUpdateQuestion}
-          onDelete={handleDeleteQuestion}
+          onAdd={handleAddTeamEval}
+          onDelete={handleDeleteActivity}
           onReorder={handleReorder}
           onGoToLobby={() => setView('lobby')}
         />
@@ -189,23 +182,15 @@ export default function HostPage() {
     }
 
     if (view === 'controller') {
-      if (!currentActivity) {
-        return (
-          <div className="min-h-screen dot-grid flex items-center justify-center">
-            <p className="font-orbitron text-primary text-lg animate-pulse">Loading question…</p>
-          </div>
-        )
-      }
       return (
-        <QuestionController
+        <TeamEvalActivity
+          key={currentActivity?.activityId}
           activity={currentActivity}
-          sessionId={sessionId}
           participantCount={leaderboard.length}
           questionIndex={currentIndex}
           totalQuestions={activities.length}
-          onReveal={() => {}}
-          onNext={handleNextQuestion}
-          onEndQuiz={handleEndQuiz}
+          onNext={handleNext}
+          onEndQuiz={handleEndSession}
         />
       )
     }
@@ -213,12 +198,13 @@ export default function HostPage() {
     if (view === 'final') {
       return (
         <div className="min-h-screen dot-grid p-6 flex flex-col items-center">
-          <div className="pointer-events-none fixed top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-warning/8 rounded-full blur-3xl" />
+          <div className="pointer-events-none fixed top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-warning/6 rounded-full blur-3xl" />
           <div className="relative z-10 w-full max-w-lg animate-fade-in">
-            <h1 className="font-orbitron text-3xl font-black text-warning text-glow-warning text-center mb-2">
+            <h1 className="font-orbitron text-3xl font-black text-warning text-center mb-2"
+                style={{ textShadow: '0 0 20px rgba(255,214,10,0.4)' }}>
               Session Ended
             </h1>
-            <p className="text-text-secondary text-center mb-8">Final Leaderboard</p>
+            <p className="text-text-secondary text-center mb-8">Final Rankings</p>
             <div className="card p-6">
               <Leaderboard sessionId={sessionId} limit={20} />
             </div>
@@ -234,7 +220,9 @@ export default function HostPage() {
               >
                 New Session
               </button>
-              <button onClick={() => navigate('/quiz')} className="btn-ghost">← QuizBlast</button>
+              <button onClick={() => navigate('/teamvote')} className="btn-ghost">
+                ← VoteBlast
+              </button>
             </div>
           </div>
         </div>
@@ -263,7 +251,7 @@ export default function HostPage() {
         </button>
       )}
 
-      {/* Confirmation dialog */}
+      {/* Confirm stop dialog */}
       {confirmStop && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -273,14 +261,21 @@ export default function HostPage() {
             <div className="text-4xl mb-3">⚠️</div>
             <h2 className="font-orbitron text-lg font-bold mb-2">Stop Session?</h2>
             <p className="text-text-secondary text-sm mb-6">
-              This will end the session immediately and show the final leaderboard to all students.
-              This cannot be undone.
+              This will end the evaluation session immediately. This cannot be undone.
             </p>
             <div className="flex gap-3 justify-center">
-              <button onClick={() => setConfirmStop(false)} disabled={stopping} className="btn-ghost py-2.5 px-6">
+              <button
+                onClick={() => setConfirmStop(false)}
+                disabled={stopping}
+                className="btn-ghost py-2.5 px-6"
+              >
                 Cancel
               </button>
-              <button onClick={handleStopSession} disabled={stopping} className="btn-danger py-2.5 px-6 font-orbitron">
+              <button
+                onClick={handleStopSession}
+                disabled={stopping}
+                className="btn-danger py-2.5 px-6 font-orbitron"
+              >
                 {stopping ? 'Stopping…' : 'Stop Session'}
               </button>
             </div>

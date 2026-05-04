@@ -3,10 +3,14 @@ import QuestionCard from './QuestionCard'
 import CsvImporter from './CsvImporter'
 import { buildCsvTemplate } from '../../utils/csvParser'
 
-const BLANK_DRAFT = { question: '', options: ['', '', '', ''], correctIndex: 0, timeLimit: 30 }
+const BLANK_DRAFT  = { question: '', options: ['', '', '', ''], correctIndex: 0, timeLimit: 30 }
 const TIME_OPTIONS = [10, 20, 30, 60]
 const OPT_LABELS   = ['A', 'B', 'C', 'D']
 
+/**
+ * MCQ question builder for the QuizBlast module.
+ * Handles only type:'quiz' activities.
+ */
 export default function QuizBuilder({ activities, onAdd, onUpdate, onDelete, onReorder, onGoToLobby }) {
   const [adding,  setAdding]  = useState(false)
   const [draft,   setDraft]   = useState({ ...BLANK_DRAFT, options: ['', '', '', ''] })

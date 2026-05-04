@@ -1,10 +1,24 @@
 import { useState } from 'react'
 import { getSessionByCode } from '../../firebase/sessionService'
-import { addParticipant } from '../../firebase/scoreService'
-import { ensureAuth } from '../../firebase/config'
+import { addParticipant }   from '../../firebase/scoreService'
+import { ensureAuth }       from '../../firebase/config'
 import { getParticipantId } from '../../utils/tabId'
 
-export default function JoinScreen({ onJoined }) {
+/**
+ * Reusable join screen used by both the Quiz and TeamVote modules.
+ *
+ * Props (all optional — defaults produce the QuizBlast style):
+ *  logoLeft  {string}  Left half of the logo word  (default "Quiz")
+ *  logoRight {string}  Right half of the logo word (default "Blast")
+ *  title     {string}  Card heading                (default "Join Quiz")
+ *  onJoined  {fn}      Called with { session, studentId, nickname }
+ */
+export default function JoinScreen({
+  logoLeft  = 'Quiz',
+  logoRight = 'Blast',
+  title     = 'Join Quiz',
+  onJoined,
+}) {
   const [code,     setCode]     = useState('')
   const [nickname, setNickname] = useState('')
   const [error,    setError]    = useState('')
@@ -23,7 +37,7 @@ export default function JoinScreen({ onJoined }) {
     try {
       const session = await getSessionByCode(trimCode)
       if (!session)                     { setError('Session not found. Check your code.'); return }
-      if (session.status === 'ended')   { setError('This quiz has already ended.'); return }
+      if (session.status === 'ended')   { setError('This session has already ended.'); return }
 
       await ensureAuth()                        // just need to be authenticated
       const participantId = getParticipantId()  // stable per browser tab
@@ -46,12 +60,16 @@ export default function JoinScreen({ onJoined }) {
       <div className="relative z-10 w-full max-w-sm animate-slide-up">
         {/* Logo */}
         <div className="text-center mb-8">
-          <span className="font-orbitron font-black text-4xl text-primary text-glow-primary">Quiz</span>
-          <span className="font-orbitron font-black text-4xl text-secondary text-glow-secondary">Blast</span>
+          <span className="font-orbitron font-black text-4xl text-primary text-glow-primary">
+            {logoLeft}
+          </span>
+          <span className="font-orbitron font-black text-4xl text-secondary text-glow-secondary">
+            {logoRight}
+          </span>
         </div>
 
         <div className="card p-8 space-y-5">
-          <h1 className="font-orbitron text-xl font-bold text-center">Join Quiz</h1>
+          <h1 className="font-orbitron text-xl font-bold text-center">{title}</h1>
 
           <form onSubmit={handleJoin} className="space-y-4">
             <div>

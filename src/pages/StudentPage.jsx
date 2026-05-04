@@ -10,12 +10,13 @@ import { useActivity }   from '../hooks/useActivity'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 
 /*
- * Student view state machine:
+ * Student view state machine for the QuizBlast (MCQ quiz) module.
+ *
  *   join → waiting → question → answered → result → leaderboard ↺ → final
  *
  * 'question'  – student can still pick an answer
  * 'answered'  – student submitted; QuestionScreen stays visible in locked mode
- *               so they can see which option they chose while waiting
+ *               so they can see which option they chose while waiting for reveal
  * 'result'    – teacher revealed; show ResultScreen with correct/wrong feedback
  * 'leaderboard' – auto-shown ~3.5s after result
  */

@@ -87,7 +87,7 @@ export default function HostGate({ children }) {
         </div>
 
         <p className="text-text-secondary text-xs text-center mt-4">
-          Students: go to <span className="text-primary">/join</span> instead
+          Students: go to <span className="text-primary">/quiz/join</span> instead
         </p>
       </div>
 

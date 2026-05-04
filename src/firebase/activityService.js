@@ -4,7 +4,7 @@ import {
 } from 'firebase/database'
 import { db } from './config'
 
-/** Create an activity for a session and return the activityId. */
+/** Create a quiz (MCQ) activity for a session and return the activityId. */
 export async function createActivity(sessionId, question) {
   const actRef     = push(ref(db, 'activities'))
   const activityId = actRef.key
@@ -18,6 +18,28 @@ export async function createActivity(sessionId, question) {
     status:       'pending',
     order:        question.order ?? 0,
     startedAt:    null,
+  })
+  return activityId
+}
+
+/**
+ * Create a team_evaluation activity for a session and return the activityId.
+ *
+ * @param {string} sessionId
+ * @param {{ title, settings, currentTeamIndex, order }} data
+ */
+export async function createTeamEvalActivity(sessionId, data) {
+  const actRef     = push(ref(db, 'activities'))
+  const activityId = actRef.key
+  await set(actRef, {
+    sessionId,
+    type:             'team_evaluation',
+    title:            data.title,
+    settings:         data.settings,
+    currentTeamIndex: data.currentTeamIndex ?? 0,
+    status:           'pending',
+    order:            data.order ?? 0,
+    startedAt:        null,
   })
   return activityId
 }
