@@ -20,7 +20,7 @@ const PODIUM_GLOW = [
  * Props:
  *  activity – the closed team_evaluation activity document
  */
-export default function TeamEvalStudentResults({ activity }) {
+export default function TeamEvalStudentResults({ activity, footerText }) {
   const { allVotes }  = useAllTeamVotes(activity.activityId)
   const { settings }  = activity
   const { teams = [], scale = 5 } = settings ?? {}
@@ -79,7 +79,7 @@ export default function TeamEvalStudentResults({ activity }) {
         </div>
 
         <p className="text-center text-text-secondary text-xs animate-pulse">
-          Heading to leaderboard…
+          {footerText ?? 'Heading to leaderboard…'}
         </p>
       </div>
     </div>

@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef }   from 'react'
 import WaitingRoom                        from '../components/student/WaitingRoom'
-import LeaderboardScreen                  from '../components/student/LeaderboardScreen'
-import FinalScreen                        from '../components/student/FinalScreen'
 import TeamVotingCard                     from '../components/student/TeamVotingCard'
 import TeamEvalStudentResults             from '../components/student/TeamEvalStudentResults'
+import TeamVoteFinalStudent               from '../components/student/TeamVoteFinalStudent'
 import JoinScreen                         from '../components/student/JoinScreen'
 import { useSession }                     from '../hooks/useSession'
 import { useActivity }                    from '../hooks/useActivity'
@@ -124,11 +123,17 @@ export default function TeamVoteStudentPage() {
   }
 
   if (view === 'leaderboard') {
-    return <LeaderboardScreen sessionId={sessionId} studentId={studentId} />
+    // Show team results while waiting for teacher to start next activity or end session
+    return (
+      <TeamEvalStudentResults
+        activity={cachedActivity}
+        footerText="Waiting for teacher…"
+      />
+    )
   }
 
   if (view === 'final') {
-    return <FinalScreen sessionId={sessionId} studentId={studentId} />
+    return <TeamVoteFinalStudent activity={cachedActivity} />
   }
 
   return null

@@ -9,7 +9,7 @@ import { useLeaderboard }               from '../hooks/useLeaderboard'
 import TeamVoteLobby                    from '../components/teacher/TeamVoteLobby'
 import TeamVoteBuilder                  from '../components/teacher/TeamVoteBuilder'
 import TeamEvalActivity                 from '../components/teacher/TeamEvalActivity'
-import Leaderboard                      from '../components/teacher/Leaderboard'
+import TeamVoteFinalScreen              from '../components/teacher/TeamVoteFinalScreen'
 
 const LS_SESSION  = 'qb_tv_sessionId'
 const LS_HOST_UID = 'qb_tv_uid'
@@ -197,35 +197,16 @@ export default function TeamVoteHostPage() {
 
     if (view === 'final') {
       return (
-        <div className="min-h-screen dot-grid p-6 flex flex-col items-center">
-          <div className="pointer-events-none fixed top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-warning/6 rounded-full blur-3xl" />
-          <div className="relative z-10 w-full max-w-lg animate-fade-in">
-            <h1 className="font-orbitron text-3xl font-black text-warning text-center mb-2"
-                style={{ textShadow: '0 0 20px rgba(255,214,10,0.4)' }}>
-              Session Ended
-            </h1>
-            <p className="text-text-secondary text-center mb-8">Final Rankings</p>
-            <div className="card p-6">
-              <Leaderboard sessionId={sessionId} limit={20} />
-            </div>
-            <div className="flex gap-4 mt-6 justify-center">
-              <button
-                onClick={() => {
-                  localStorage.removeItem(LS_SESSION)
-                  localStorage.removeItem(LS_HOST_UID)
-                  setSessionId(null)
-                  setView('create')
-                }}
-                className="btn-primary font-orbitron"
-              >
-                New Session
-              </button>
-              <button onClick={() => navigate('/teamvote')} className="btn-ghost">
-                ← VoteBlast
-              </button>
-            </div>
-          </div>
-        </div>
+        <TeamVoteFinalScreen
+          activities={activities}
+          onNewSession={() => {
+            localStorage.removeItem(LS_SESSION)
+            localStorage.removeItem(LS_HOST_UID)
+            setSessionId(null)
+            setView('create')
+          }}
+          onBack={() => navigate('/teamvote')}
+        />
       )
     }
 
