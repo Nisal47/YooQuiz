@@ -1,0 +1,61 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx}'],
+  theme: {
+    extend: {
+      colors: {
+        bg: '#0A0A0F',
+        surface: '#12121A',
+        card: '#1A1A2E',
+        primary: '#6C63FF',
+        secondary: '#00F5D4',
+        danger: '#FF4D6D',
+        warning: '#FFD60A',
+        'text-primary': '#FFFFFF',
+        'text-secondary': '#8B8BA0',
+        // answer option colors
+        opt0: '#6C63FF',
+        opt1: '#00F5D4',
+        opt2: '#FF6B6B',
+        opt3: '#FFD60A',
+      },
+      fontFamily: {
+        orbitron: ['Orbitron', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
+      },
+      boxShadow: {
+        'glow-primary': '0 0 20px rgba(108, 99, 255, 0.4)',
+        'glow-secondary': '0 0 20px rgba(0, 245, 212, 0.4)',
+        'glow-danger': '0 0 20px rgba(255, 77, 109, 0.4)',
+        'glow-warning': '0 0 20px rgba(255, 214, 10, 0.4)',
+      },
+      animation: {
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'slide-up': 'slideUp 0.4s ease-out',
+        'slide-in': 'slideIn 0.3s ease-out',
+        'pop': 'pop 0.5s ease-out',
+        'flash-green': 'flashGreen 0.6s ease-out',
+        'flash-red': 'flashRed 0.6s ease-out',
+        'bounce-in': 'bounceIn 0.5s ease-out',
+        'score-pop': 'scorePop 0.8s ease-out forwards',
+        'float-up': 'floatUp 1.5s ease-out forwards',
+        'spin-ring': 'spinRing 1s linear infinite',
+        'shimmer': 'shimmer 2s linear infinite',
+      },
+      keyframes: {
+        fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },
+        slideUp: { from: { opacity: '0', transform: 'translateY(20px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+        slideIn: { from: { opacity: '0', transform: 'translateX(-20px)' }, to: { opacity: '1', transform: 'translateX(0)' } },
+        pop: { '0%': { transform: 'scale(0.8)', opacity: '0' }, '60%': { transform: 'scale(1.05)' }, '100%': { transform: 'scale(1)', opacity: '1' } },
+        bounceIn: { '0%': { transform: 'scale(0)', opacity: '0' }, '60%': { transform: 'scale(1.1)' }, '100%': { transform: 'scale(1)', opacity: '1' } },
+        flashGreen: { '0%': { backgroundColor: 'transparent' }, '30%': { backgroundColor: 'rgba(0,245,212,0.25)' }, '100%': { backgroundColor: 'transparent' } },
+        flashRed: { '0%': { backgroundColor: 'transparent' }, '30%': { backgroundColor: 'rgba(255,77,109,0.25)' }, '100%': { backgroundColor: 'transparent' } },
+        scorePop: { '0%': { opacity: '0', transform: 'translateY(0) scale(0.5)' }, '40%': { opacity: '1', transform: 'translateY(-20px) scale(1.2)' }, '100%': { opacity: '0', transform: 'translateY(-60px) scale(0.8)' } },
+        floatUp: { '0%': { opacity: '1', transform: 'translateY(0)' }, '100%': { opacity: '0', transform: 'translateY(-80px)' } },
+        shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
+      },
+    },
+  },
+  plugins: [],
+}

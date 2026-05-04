@@ -1,0 +1,34 @@
+{
+  "rules": {
+    "sessions": {
+      ".read": true,
+      ".indexOn": ["code"],
+      "$sessionId": {
+        ".write": "auth != null && (!data.exists() || data.child('hostId').val() === auth.uid)"
+      }
+    },
+    "activities": {
+      ".read": true,
+      ".indexOn": ["sessionId"],
+      "$activityId": {
+        ".write": "auth != null"
+      }
+    },
+    "responses": {
+      "$activityId": {
+        ".read": "auth != null",
+        "$studentId": {
+          ".write": "auth != null && !data.exists()"
+        }
+      }
+    },
+    "participants": {
+      "$sessionId": {
+        ".read": true,
+        "$studentId": {
+          ".write": "auth != null"
+        }
+      }
+    }
+  }
+}
