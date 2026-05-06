@@ -2,7 +2,7 @@
   "rules": {
     "sessions": {
       ".read": true,
-      ".indexOn": ["code"],
+      ".indexOn": ["code", "hostId"],
       "$sessionId": {
         ".write": "auth != null && (!data.exists() || data.child('hostId').val() === auth.uid)"
       }

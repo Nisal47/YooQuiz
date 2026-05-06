@@ -95,6 +95,34 @@ export function onActivitiesChange(sessionId, callback) {
   })
 }
 
+/**
+ * Clone a list of activities into a new session.
+ * Preserves question/settings data; resets status, startedAt, currentTeamIndex.
+ */
+export async function cloneActivities(sourceActivities, newSessionId) {
+  const promises = sourceActivities.map((act, i) => {
+    if (act.type === 'quiz') {
+      return createActivity(newSessionId, {
+        question:     act.question,
+        options:      act.options,
+        correctIndex: act.correctIndex,
+        timeLimit:    act.timeLimit ?? 30,
+        order:        i,
+      })
+    }
+    if (act.type === 'team_evaluation') {
+      return createTeamEvalActivity(newSessionId, {
+        title:            act.title,
+        settings:         act.settings,
+        currentTeamIndex: 0,
+        order:            i,
+      })
+    }
+    return Promise.resolve()
+  })
+  return Promise.all(promises)
+}
+
 /** Subscribe to a single activity. Returns unsubscribe fn. */
 export function onActivityChange(activityId, callback) {
   return onValue(ref(db, `activities/${activityId}`), snap => {

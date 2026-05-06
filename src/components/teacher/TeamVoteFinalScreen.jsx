@@ -14,8 +14,9 @@ const RANK_COLORS = ['text-warning', 'text-white/70', 'text-[#CD7F32]']
 /**
  * Per-activity results block — uses its own hook so each activity
  * can independently subscribe to /teamVotes/{activityId}.
+ * Exported so SessionReview can reuse it for VoteBlast history views.
  */
-function ActivitySummary({ activity }) {
+export function ActivitySummary({ activity }) {
   const { allVotes }      = useAllTeamVotes(activity.activityId)
   const { settings }      = activity
   const { teams = [], criteria = [], scale = 5 } = settings ?? {}
