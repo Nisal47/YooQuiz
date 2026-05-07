@@ -1,5 +1,10 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 
+// Auth
+import { AuthProvider } from './context/AuthContext'
+import AuthGate         from './components/shared/AuthGate'
+import AuthPage         from './pages/AuthPage'
+
 // Hub
 import YooQuizHome       from './pages/YooQuizHome'
 
@@ -9,33 +14,35 @@ import HostPage          from './pages/HostPage'
 import StudentPage       from './pages/StudentPage'
 
 // TeamVote module
-import TeamVoteLanding   from './pages/TeamVoteLanding'
-import TeamVoteHostPage  from './pages/TeamVoteHostPage'
+import TeamVoteLanding     from './pages/TeamVoteLanding'
+import TeamVoteHostPage    from './pages/TeamVoteHostPage'
 import TeamVoteStudentPage from './pages/TeamVoteStudentPage'
-
-// Shared gate
-import HostGate          from './components/shared/HostGate'
 
 export default function App() {
   return (
     <HashRouter>
-      <Routes>
-        {/* ── Hub ──────────────────────────────────────────────────── */}
-        <Route path="/"                 element={<YooQuizHome />} />
+      <AuthProvider>
+        <Routes>
+          {/* ── Hub ──────────────────────────────────────────────────── */}
+          <Route path="/"     element={<YooQuizHome />} />
 
-        {/* ── Quiz module ──────────────────────────────────────────── */}
-        <Route path="/quiz"             element={<LandingPage />} />
-        <Route path="/quiz/host"        element={<HostGate><HostPage /></HostGate>} />
-        <Route path="/quiz/join"        element={<StudentPage />} />
+          {/* ── Auth (teacher sign-in / sign-up) ─────────────────────── */}
+          <Route path="/auth" element={<AuthPage />} />
 
-        {/* ── TeamVote module ───────────────────────────────────────── */}
-        <Route path="/teamvote"         element={<TeamVoteLanding />} />
-        <Route path="/teamvote/host"    element={<HostGate><TeamVoteHostPage /></HostGate>} />
-        <Route path="/teamvote/join"    element={<TeamVoteStudentPage />} />
+          {/* ── Quiz module ──────────────────────────────────────────── */}
+          <Route path="/quiz"      element={<LandingPage />} />
+          <Route path="/quiz/host" element={<AuthGate><HostPage /></AuthGate>} />
+          <Route path="/quiz/join" element={<StudentPage />} />
 
-        {/* Catch-all */}
-        <Route path="*"                 element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* ── TeamVote module ───────────────────────────────────────── */}
+          <Route path="/teamvote"      element={<TeamVoteLanding />} />
+          <Route path="/teamvote/host" element={<AuthGate><TeamVoteHostPage /></AuthGate>} />
+          <Route path="/teamvote/join" element={<TeamVoteStudentPage />} />
+
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
     </HashRouter>
   )
 }

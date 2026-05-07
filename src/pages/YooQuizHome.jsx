@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth }     from '../context/AuthContext'
+import { signOutTeacher } from '../firebase/authService'
 
 const MODULES = [
   {
@@ -41,12 +43,46 @@ const MODULES = [
 
 export default function YooQuizHome() {
   const navigate = useNavigate()
+  const { teacher, teacherLoading } = useAuth()
 
   return (
     <div className="min-h-screen dot-grid flex flex-col items-center justify-center px-4 py-12">
       {/* Ambient glows */}
       <div className="pointer-events-none fixed top-1/4 left-1/4 w-96 h-96 bg-primary/8 rounded-full blur-3xl" />
       <div className="pointer-events-none fixed bottom-1/4 right-1/4 w-80 h-80 bg-[#FF6B6B]/6 rounded-full blur-3xl" />
+
+      {/* ── Teacher account chip — top-right ─────────────────────────── */}
+      {!teacherLoading && (
+        <div className="fixed top-3 right-4 z-50 flex items-center gap-2">
+          {teacher ? (
+            <>
+              <span
+                className="hidden sm:block text-xs text-text-secondary truncate max-w-[160px]"
+                title={teacher.email}
+              >
+                {teacher.displayName || teacher.email}
+              </span>
+              <button
+                onClick={signOutTeacher}
+                className="text-xs text-text-secondary hover:text-danger
+                  border border-white/10 hover:border-danger/50
+                  px-2.5 py-1.5 rounded-lg transition-all"
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => navigate('/auth')}
+              className="text-xs text-text-secondary hover:text-primary
+                border border-white/10 hover:border-primary/50
+                px-2.5 py-1.5 rounded-lg transition-all"
+            >
+              Teacher sign in
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="relative z-10 w-full max-w-4xl animate-fade-in">
         {/* ── Brand ───────────────────────────────────────────────────── */}
@@ -138,7 +174,7 @@ export default function YooQuizHome() {
 
         {/* Footer note */}
         <p className="text-center text-text-secondary text-xs mt-10 opacity-50">
-          No account needed · Firebase real-time · Anonymous join
+          Students join anonymously · Teachers sign in above
         </p>
       </div>
     </div>

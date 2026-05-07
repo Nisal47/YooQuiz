@@ -1,6 +1,6 @@
 import { useState, useEffect }          from 'react'
 import { useNavigate }                  from 'react-router-dom'
-import { ensureAuth }                   from '../firebase/config'
+import { useAuth }                      from '../context/AuthContext'
 import { createSession, updateSession, setCurrentActivity } from '../firebase/sessionService'
 import {
   createTeamEvalActivity, updateActivity, deleteActivity,
@@ -16,8 +16,7 @@ import TeamVoteFinalScreen              from '../components/teacher/TeamVoteFina
 import SessionHistoryPanel              from '../components/teacher/SessionHistoryPanel'
 import SessionReview                    from '../components/teacher/SessionReview'
 
-const LS_SESSION  = 'qb_tv_sessionId'
-const LS_HOST_UID = 'qb_tv_uid'
+const LS_SESSION      = 'qb_tv_sessionId'
 const STOPPABLE_VIEWS = ['lobby', 'builder', 'controller']
 
 /**
@@ -30,10 +29,10 @@ const STOPPABLE_VIEWS = ['lobby', 'builder', 'controller']
  */
 export default function TeamVoteHostPage() {
   const navigate = useNavigate()
+  const { teacher } = useAuth()
 
   const [view,            setView]            = useState('init')
   const [sessionId,       setSessionId]       = useState(() => localStorage.getItem(LS_SESSION))
-  const [hostUid,         setHostUid]         = useState(() => localStorage.getItem(LS_HOST_UID))
   const [reviewSessionId, setReviewSessionId] = useState(null)
   const [currentIndex,    setCurrentIndex]    = useState(0)
   const [creatingMsg,     setCreatingMsg]     = useState('')
@@ -45,15 +44,6 @@ export default function TeamVoteHostPage() {
   const leaderboard    = useLeaderboard(sessionId)
 
   const currentActivity = activities[currentIndex] ?? null
-
-  // ─── Ensure auth uid is available (needed for history panel) ─────────────
-  useEffect(() => {
-    if (hostUid) return
-    ensureAuth().then(uid => {
-      setHostUid(uid)
-      localStorage.setItem(LS_HOST_UID, uid)
-    })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Restore view on refresh ───────────────────────────────────────────────
   useEffect(() => {
@@ -73,10 +63,7 @@ export default function TeamVoteHostPage() {
 
   async function handleCreateSession() {
     setCreatingMsg('Creating session…')
-    const uid = await ensureAuth()
-    setHostUid(uid)
-    localStorage.setItem(LS_HOST_UID, uid)
-    const { sessionId: sid } = await createSession(uid, 'team_evaluation')
+    const { sessionId: sid } = await createSession(teacher.uid, 'team_evaluation')
     setSessionId(sid)
     localStorage.setItem(LS_SESSION, sid)
     setView('lobby')
@@ -87,11 +74,8 @@ export default function TeamVoteHostPage() {
   async function handleReuse(sourceSessionId) {
     setCreatingMsg('Copying evaluations…')
     try {
-      const uid  = await ensureAuth()
       const acts = await getActivities(sourceSessionId)
-      const { sessionId: sid } = await createSession(uid, 'team_evaluation')
-      setHostUid(uid)
-      localStorage.setItem(LS_HOST_UID, uid)
+      const { sessionId: sid } = await createSession(teacher.uid, 'team_evaluation')
       setSessionId(sid)
       localStorage.setItem(LS_SESSION, sid)
       await cloneActivities(acts, sid)
@@ -201,7 +185,7 @@ export default function TeamVoteHostPage() {
 
             {/* Previous sessions */}
             <SessionHistoryPanel
-              hostUid={hostUid}
+              hostUid={teacher?.uid}
               type="team_evaluation"
               onView={sid => { setReviewSessionId(sid); setView('review') }}
               onReuse={handleReuse}
@@ -254,7 +238,6 @@ export default function TeamVoteHostPage() {
           activities={activities}
           onNewSession={() => {
             localStorage.removeItem(LS_SESSION)
-            localStorage.removeItem(LS_HOST_UID)
             setSessionId(null)
             setView('create')
           }}

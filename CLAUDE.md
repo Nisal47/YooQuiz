@@ -37,13 +37,60 @@ Always use `cmd` to run npm commands on this machine (PowerShell blocks .ps1 scr
 ### Route structure
 ```
 /#/               YooQuizHome  (hub — choose module)
+/#/auth           AuthPage     (teacher sign-in / sign-up)
 /#/quiz           LandingPage  (QuizBlast landing)
-/#/quiz/host      HostPage     (wrapped in HostGate PIN check)
+/#/quiz/host      HostPage     (wrapped in AuthGate — real Firebase auth required)
 /#/quiz/join      StudentPage
 /#/teamvote       TeamVoteLanding
-/#/teamvote/host  TeamVoteHostPage  (wrapped in HostGate)
+/#/teamvote/host  TeamVoteHostPage  (wrapped in AuthGate)
 /#/teamvote/join  TeamVoteStudentPage
 ```
+
+---
+
+## Teacher authentication
+
+Teachers sign in with real Firebase Auth (Google OAuth or email/password).
+Students still use anonymous auth — no accounts needed.
+
+### Auth flow
+- `/#/auth` — `AuthPage` with Sign In / Create Account tabs
+  - Google sign-in: always immediately verified
+  - Email/password: sends verification link; user must verify before accessing host pages
+- `AuthGate` wraps all `/*/host` routes:
+  1. Loading → spinner (Firebase restoring session from IndexedDB)
+  2. Not signed in → redirect to `/#/auth` with `from` state
+  3. Email user, not yet verified → inline "Verify your email" prompt
+  4. All clear → render the host page
+- `AuthContext` (`src/context/AuthContext.jsx`) provides `{ teacher, teacherLoading }` — excludes anonymous users (`isAnonymous` check)
+
+### Teacher profile (Firestore)
+`/users/{uid}` — created on first sign-in, updated `lastLoginAt` on each login.
+```
+uid:         string
+displayName: string
+email:       string
+provider:    'google' | 'email'
+photoURL:    string | null
+plan:        'free'             (future: 'standard' | 'pro')
+createdAt:   timestamp
+lastLoginAt: timestamp
+```
+Rules in `firestore.rules` — each teacher reads/writes only their own document.
+
+### Key files added
+| File | Purpose |
+|---|---|
+| `src/firebase/authService.js` | `signInWithGoogle`, `signInWithEmail`, `signUpWithEmail`, `resendVerificationEmail`, `signOutTeacher` |
+| `src/firebase/userService.js` | `createUserProfile`, `getUserProfile`, `updateUserProfile` (Firestore) |
+| `src/context/AuthContext.jsx` | React context; `useAuth()` hook returns `{ teacher, teacherLoading }` |
+| `src/pages/AuthPage.jsx` | Sign In / Create Account UI at `/#/auth` |
+| `src/components/shared/AuthGate.jsx` | Route guard; replaces old PIN-based `HostGate` |
+| `firestore.rules` | Firestore security rules — paste into Firebase Console |
+
+### `ensureAuth()` still used by students
+`src/firebase/config.js` → `ensureAuth()` does `signInAnonymously` and is called by `JoinScreen`.
+Teachers have real auth; this function is not used by host pages any more.
 
 ---
 
@@ -217,14 +264,20 @@ VITE_HOST_PIN=
 
 ## Firebase security rules
 
-Current rules in `firebase.rules.json`. Must be **manually pasted** into Firebase Console → Realtime Database → Rules each time they change.
+### Realtime Database — `firebase.rules.json`
+Must be **manually pasted** into Firebase Console → Realtime Database → Rules.
 
 Key decisions:
-- `sessions`: publicly readable (students need to look up by code), writable only by the creating host
+- `sessions`: publicly readable (students look up by code), writable only by the creating host (`hostId === auth.uid`)
 - `activities`: publicly readable, writable by any authenticated user (teacher is authenticated)
 - `responses`: readable by authenticated users, **write-once** (`!data.exists()`) by any authenticated user
 - `participants`: publicly readable, writable by any authenticated user (covers tab-scoped IDs and teacher score updates)
-- `teamVotes`: readable by authenticated users (teacher needs to read all votes for results), **write-once** per `{studentId}` per `{teamId}` — one vote per student per team, no editing
+- `teamVotes`: readable by authenticated users, **write-once** per `{studentId}` per `{teamId}`
+
+### Firestore — `firestore.rules`
+Must be **manually pasted** into Firebase Console → Firestore Database → Rules.
+- `/users/{uid}`: readable and writable only by `auth.uid === uid`
+- Everything else: denied
 
 ---
 
