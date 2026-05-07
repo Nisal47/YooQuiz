@@ -1,13 +1,20 @@
 import { ref, set, get, update, onValue, runTransaction } from 'firebase/database'
 import { db } from './config'
 
-/** Register a participant in a session. */
+/**
+ * Register a participant in a session.
+ * Safe to call on rejoin — existing participants keep their totalScore.
+ */
 export async function addParticipant(sessionId, studentId, nickname) {
-  await set(ref(db, `participants/${sessionId}/${studentId}`), {
-    nickname,
-    joinedAt:   Date.now(),
-    totalScore: 0,
-  })
+  const r    = ref(db, `participants/${sessionId}/${studentId}`)
+  const snap = await get(r)
+  if (snap.exists()) {
+    // Returning participant — only refresh identity fields, preserve score
+    await update(r, { nickname, joinedAt: Date.now() })
+  } else {
+    // First join
+    await set(r, { nickname, joinedAt: Date.now(), totalScore: 0 })
+  }
 }
 
 /** Increment a participant's totalScore atomically. */

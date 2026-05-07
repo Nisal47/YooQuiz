@@ -7,6 +7,10 @@ import JoinScreen                         from '../components/student/JoinScreen
 import { useSession }                     from '../hooks/useSession'
 import { useActivity }                    from '../hooks/useActivity'
 import { useLeaderboard }                 from '../hooks/useLeaderboard'
+import { getSession }                     from '../firebase/sessionService'
+import { addParticipant }                 from '../firebase/scoreService'
+
+const LS_KEY = 'qb_student_tv'
 
 /*
  * Student state machine for the VoteBlast (team_evaluation) module.
@@ -30,6 +34,7 @@ export default function TeamVoteStudentPage() {
   const [studentId,      setStudentId]      = useState(null)
   const [nickname,       setNickname]       = useState('')
   const [cachedActivity, setCachedActivity] = useState(null)
+  const [restoring,      setRestoring]      = useState(false)
 
   const prevActivityId = useRef(null)
   const prevStatus     = useRef(null)
@@ -44,7 +49,36 @@ export default function TeamVoteStudentPage() {
     if (activity) setCachedActivity(activity)
   }, [activity])
 
+  // ─── Restore session from localStorage on mount ───────────────────────────
+  useEffect(() => {
+    const raw = localStorage.getItem(LS_KEY)
+    if (!raw) return
+    let stored
+    try { stored = JSON.parse(raw) } catch { localStorage.removeItem(LS_KEY); return }
+
+    setRestoring(true)
+    getSession(stored.sessionId)
+      .then(async session => {
+        if (!session || session.status === 'ended') {
+          localStorage.removeItem(LS_KEY)
+          return
+        }
+        await addParticipant(stored.sessionId, stored.participantId, stored.nickname)
+        setSessionId(stored.sessionId)
+        setStudentId(stored.participantId)
+        setNickname(stored.nickname)
+        setView('waiting')
+      })
+      .catch(() => localStorage.removeItem(LS_KEY))
+      .finally(() => setRestoring(false))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   function handleJoined({ session, studentId, nickname }) {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      sessionId:     session.sessionId,
+      participantId: studentId,
+      nickname,
+    }))
     setSessionId(session.sessionId)
     setStudentId(studentId)
     setNickname(nickname)
@@ -54,7 +88,7 @@ export default function TeamVoteStudentPage() {
   // ─── Signal 1: currentActivityId changed ──────────────────────────────────
   useEffect(() => {
     if (!session) return
-    if (session.status === 'ended') { setView('final'); return }
+    if (session.status === 'ended') { localStorage.removeItem(LS_KEY); setView('final'); return }
     if (!session.currentActivityId) {
       setView(v => v === 'join' ? 'join' : 'waiting')
       return
@@ -78,6 +112,14 @@ export default function TeamVoteStudentPage() {
   }, [activity?.status])
 
   // ─── Render ───────────────────────────────────────────────────────────────
+
+  if (restoring) {
+    return (
+      <div className="min-h-screen dot-grid flex items-center justify-center">
+        <p className="font-orbitron text-[#FF6B6B] text-lg animate-pulse">Reconnecting…</p>
+      </div>
+    )
+  }
 
   if (view === 'join') {
     return (

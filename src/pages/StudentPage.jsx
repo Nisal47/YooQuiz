@@ -8,6 +8,11 @@ import FinalScreen       from '../components/student/FinalScreen'
 import { useSession }    from '../hooks/useSession'
 import { useActivity }   from '../hooks/useActivity'
 import { useLeaderboard } from '../hooks/useLeaderboard'
+import { getSession }    from '../firebase/sessionService'
+import { addParticipant } from '../firebase/scoreService'
+import { hasResponded }  from '../firebase/responseService'
+
+const LS_KEY = 'qb_student_quiz'
 
 /*
  * Student view state machine for the QuizBlast (MCQ quiz) module.
@@ -27,9 +32,11 @@ export default function StudentPage() {
   const [nickname,       setNickname]       = useState('')
   const [lastAnswer,     setLastAnswer]     = useState(null)
   const [cachedActivity, setCachedActivity] = useState(null)
+  const [restoring,      setRestoring]      = useState(false)
 
   const prevActivityId = useRef(null)
   const prevStatus     = useRef(null)
+  const wasRestored    = useRef(false)  // gates the hasResponded check after restore
 
   const { session }  = useSession(sessionId)
   const { activity } = useActivity(session?.currentActivityId)
@@ -43,7 +50,50 @@ export default function StudentPage() {
     if (activity) setCachedActivity(activity)
   }, [activity])
 
+  // ─── Restore session from localStorage on mount ───────────────────────────
+  useEffect(() => {
+    const raw = localStorage.getItem(LS_KEY)
+    if (!raw) return
+    let stored
+    try { stored = JSON.parse(raw) } catch { localStorage.removeItem(LS_KEY); return }
+
+    setRestoring(true)
+    getSession(stored.sessionId)
+      .then(async session => {
+        if (!session || session.status === 'ended') {
+          localStorage.removeItem(LS_KEY)
+          return
+        }
+        await addParticipant(stored.sessionId, stored.participantId, stored.nickname)
+        wasRestored.current = true
+        setSessionId(stored.sessionId)
+        setStudentId(stored.participantId)
+        setNickname(stored.nickname)
+        setView('waiting')
+      })
+      .catch(() => localStorage.removeItem(LS_KEY))
+      .finally(() => setRestoring(false))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── After restore: check if student already answered current question ─────
+  // Fires only when wasRestored is true and view just became 'question'.
+  // Moves to 'answered' so the UI reflects reality and the submit button is hidden.
+  useEffect(() => {
+    if (!wasRestored.current) return
+    if (view !== 'question') return
+    if (!studentId || !session?.currentActivityId) return
+    wasRestored.current = false  // one-shot — clear before the async call
+    hasResponded(session.currentActivityId, studentId).then(already => {
+      if (already) setView('answered')
+    })
+  }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function handleJoined({ session, studentId, nickname }) {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      sessionId:     session.sessionId,
+      participantId: studentId,
+      nickname,
+    }))
     setSessionId(session.sessionId)
     setStudentId(studentId)
     setNickname(nickname)
@@ -55,6 +105,7 @@ export default function StudentPage() {
     if (!session) return
 
     if (session.status === 'ended') {
+      localStorage.removeItem(LS_KEY)
       setView('final')
       return
     }
@@ -86,6 +137,14 @@ export default function StudentPage() {
   }, [activity?.status])
 
   // ─── Render ───────────────────────────────────────────────────────────────
+
+  if (restoring) {
+    return (
+      <div className="min-h-screen dot-grid flex items-center justify-center">
+        <p className="font-orbitron text-primary text-lg animate-pulse">Reconnecting…</p>
+      </div>
+    )
+  }
 
   if (view === 'join') {
     return <JoinScreen onJoined={handleJoined} />
