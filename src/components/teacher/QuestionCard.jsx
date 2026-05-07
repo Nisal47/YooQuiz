@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import ImageUrlInput from '../shared/ImageUrlInput'
 
-const OPT_COLORS = ['text-primary', 'text-secondary', 'text-[#FF6B6B]', 'text-warning']
-const OPT_LABELS = ['A', 'B', 'C', 'D']
+const OPT_COLORS   = ['text-primary', 'text-secondary', 'text-[#FF6B6B]', 'text-warning']
+const OPT_LABELS   = ['A', 'B', 'C', 'D']
 const TIME_OPTIONS = [10, 20, 30, 60]
 
 export default function QuestionCard({ question, index, total, onUpdate, onDelete, onMoveUp, onMoveDown }) {
@@ -14,6 +15,7 @@ export default function QuestionCard({ question, index, total, onUpdate, onDelet
       options:      [...question.options, '', '', ''].slice(0, 4),
       correctIndex: question.correctIndex,
       timeLimit:    question.timeLimit,
+      imageUrl:     question.imageUrl || '',
     })
     setEditing(true)
   }
@@ -26,6 +28,7 @@ export default function QuestionCard({ question, index, total, onUpdate, onDelet
       options:      opts,
       correctIndex: Math.min(draft.correctIndex, opts.length - 1),
       timeLimit:    draft.timeLimit,
+      imageUrl:     draft.imageUrl.trim() || null,
     })
     setEditing(false)
   }
@@ -35,6 +38,7 @@ export default function QuestionCard({ question, index, total, onUpdate, onDelet
     setEditing(false)
   }
 
+  // ── Edit mode ──────────────────────────────────────────────────────────────
   if (editing) {
     return (
       <div className="card p-5 border border-primary/40 animate-fade-in">
@@ -50,6 +54,12 @@ export default function QuestionCard({ question, index, total, onUpdate, onDelet
               placeholder="Enter your question…"
             />
           </div>
+
+          {/* Image URL (optional) */}
+          <ImageUrlInput
+            value={draft.imageUrl}
+            onChange={url => setDraft(d => ({ ...d, imageUrl: url }))}
+          />
 
           {/* Options */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -116,6 +126,7 @@ export default function QuestionCard({ question, index, total, onUpdate, onDelet
     )
   }
 
+  // ── View mode ──────────────────────────────────────────────────────────────
   return (
     <div className="card p-4 flex gap-4 group hover:border-white/20 border border-transparent transition-all">
       {/* Order controls */}
@@ -136,6 +147,16 @@ export default function QuestionCard({ question, index, total, onUpdate, onDelet
       {/* Content */}
       <div className="flex-1 min-w-0">
         <p className="text-white font-medium mb-2 leading-snug">{question.question}</p>
+        {question.imageUrl && (
+          <div className="mb-2 rounded-lg overflow-hidden border border-white/8 max-h-32">
+            <img
+              src={question.imageUrl}
+              alt=""
+              className="w-full max-h-32 object-contain bg-surface/50"
+              onError={e => { e.currentTarget.parentElement.style.display = 'none' }}
+            />
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           {question.options.map((opt, i) => (
             <span
@@ -154,9 +175,14 @@ export default function QuestionCard({ question, index, total, onUpdate, onDelet
 
       {/* Meta + actions */}
       <div className="flex flex-col items-end gap-2 flex-shrink-0">
-        <span className="bg-warning/15 text-warning text-xs font-semibold px-2 py-0.5 rounded-full">
-          {question.timeLimit}s
-        </span>
+        <div className="flex items-center gap-1.5">
+          {question.imageUrl && (
+            <span className="text-xs text-text-secondary" title="Has image">🖼️</span>
+          )}
+          <span className="bg-warning/15 text-warning text-xs font-semibold px-2 py-0.5 rounded-full">
+            {question.timeLimit}s
+          </span>
+        </div>
         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={startEdit}

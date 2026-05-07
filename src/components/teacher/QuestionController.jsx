@@ -88,6 +88,16 @@ export default function QuestionController({
         <div className="space-y-5">
           {/* Question */}
           <div className="card p-6">
+            {activity.imageUrl && (
+              <div className="mb-5 rounded-xl overflow-hidden border border-white/10">
+                <img
+                  src={activity.imageUrl}
+                  alt=""
+                  className="w-full max-h-48 object-contain bg-surface"
+                  onError={e => { e.currentTarget.parentElement.style.display = 'none' }}
+                />
+              </div>
+            )}
             <p className="font-orbitron text-xl font-bold text-white leading-snug mb-6">
               {activity.question}
             </p>

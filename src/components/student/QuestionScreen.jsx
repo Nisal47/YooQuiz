@@ -72,7 +72,19 @@ export default function QuestionScreen({ activity, studentId, initialSelected = 
       </div>
 
       <div className="flex-1 flex flex-col justify-center max-w-lg mx-auto w-full gap-4">
-        {/* Question */}
+        {/* Question image (optional) */}
+        {activity.imageUrl && (
+          <div className="card overflow-hidden p-0">
+            <img
+              src={activity.imageUrl}
+              alt="Question"
+              className="w-full max-h-56 object-contain bg-surface"
+              onError={e => { e.currentTarget.parentElement.style.display = 'none' }}
+            />
+          </div>
+        )}
+
+        {/* Question text */}
         <div className="card p-6 text-center">
           <p className="font-orbitron text-xl font-bold leading-snug text-white">
             {activity.question}

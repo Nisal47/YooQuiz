@@ -15,6 +15,7 @@ export async function createActivity(sessionId, question) {
     options:      question.options,
     correctIndex: question.correctIndex,
     timeLimit:    question.timeLimit ?? 30,
+    imageUrl:     question.imageUrl   ?? null,
     status:       'pending',
     order:        question.order ?? 0,
     startedAt:    null,
@@ -107,6 +108,7 @@ export async function cloneActivities(sourceActivities, newSessionId) {
         options:      act.options,
         correctIndex: act.correctIndex,
         timeLimit:    act.timeLimit ?? 30,
+        imageUrl:     act.imageUrl   ?? null,
         order:        i,
       })
     }

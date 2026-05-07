@@ -79,9 +79,9 @@ export default function CsvImporter({ open, onClose, onImport }) {
             )}
 
             <p className="mt-4 text-text-secondary text-xs leading-relaxed">
-              Expected columns: <code className="text-primary">question, option_a, option_b, option_c, option_d, correct, time_limit</code>
+              Expected columns: <code className="text-primary">question, option_a, option_b, option_c, option_d, correct, time_limit, image_url</code>
               <br />
-              <code>correct</code>: A/B/C/D or 0/1/2/3 · <code>option_c</code>, <code>option_d</code>, and <code>time_limit</code> are optional
+              <code>correct</code>: A/B/C/D or 0/1/2/3 · <code>option_c</code>, <code>option_d</code>, <code>time_limit</code>, and <code>image_url</code> are optional
             </p>
           </div>
         </div>

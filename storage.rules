@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Quiz question images.
+    // - Any authenticated user can read (students need to load images during a quiz).
+    // - Only the owning teacher (uid matches path segment) can write (upload / delete).
+    match /quiz-images/{uid}/{allPaths=**} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Deny everything else by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

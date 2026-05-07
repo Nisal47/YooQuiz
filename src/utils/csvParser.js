@@ -1,3 +1,5 @@
+import { normalizeImageUrl } from './imageUtils'
+
 /**
  * Parse PapaParse output into validated quiz questions.
  *
@@ -62,8 +64,11 @@ export function parseQuizCsv(papaParsedData) {
         }
       }
 
+      // Optional image URL — normalize (converts Google Drive share links)
+      const imageUrl = normalizeImageUrl((norm.image_url || '').trim()) || null
+
       const parsed = errors.length === 0
-        ? { question, options, correctIndex, timeLimit, order: index }
+        ? { question, options, correctIndex, timeLimit, imageUrl, order: index }
         : null
 
       return { index, rawRow: row, parsed, errors }
@@ -84,10 +89,10 @@ function normalise(row) {
 
 /** Generate a sample CSV string for download. */
 export function buildCsvTemplate() {
-  const header = 'question,option_a,option_b,option_c,option_d,correct,time_limit'
+  const header = 'question,option_a,option_b,option_c,option_d,correct,time_limit,image_url'
   const rows = [
-    '"What is 2 + 2?","1","2","3","4","C","30"',
-    '"Capital of France?","Berlin","Paris","Rome","Madrid","B","20"',
+    '"What is 2 + 2?","1","2","3","4","C","30",""',
+    '"Capital of France?","Berlin","Paris","Rome","Madrid","B","20","https://example.com/paris.jpg"',
   ]
   return [header, ...rows].join('\n')
 }

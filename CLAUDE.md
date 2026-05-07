@@ -209,7 +209,7 @@ All Firebase calls live here. Components never import from `firebase/*` directly
 
 | File | Responsibility |
 |---|---|
-| `config.js` | App init, `ensureAuth()` for anonymous sign-in |
+| `config.js` | App init, `ensureAuth()` for anonymous sign-in; exports `storage` (Firebase Storage) |
 | `sessionService.js` | CRUD + realtime subscription for sessions; lookup by code |
 | `activityService.js` | CRUD + `launchActivity` / `closeActivity` + `createTeamEvalActivity` |
 | `responseService.js` | Write-once response submission, realtime subscription (quiz only) |
@@ -255,14 +255,21 @@ VITE_FIREBASE_AUTH_DOMAIN=
 VITE_FIREBASE_DATABASE_URL=
 VITE_FIREBASE_PROJECT_ID=
 VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_STORAGE_BUCKET=          # e.g. quiz-app-bb9ac.appspot.com
 VITE_HOST_PIN=
 ```
 
+`VITE_FIREBASE_STORAGE_BUCKET` — find this in Firebase Console → Storage → the bucket name shown (without `gs://`).
 `VITE_HOST_PIN` — teacher-only PIN for the host gate. Set to anything you like.
 
 ---
 
 ## Firebase security rules
+
+### Storage — `storage.rules`
+Must be **manually pasted** into Firebase Console → Storage → Rules.
+- `quiz-images/{uid}/**`: readable by any authenticated user (students load images during quiz); writable only by the owning teacher (uid match).
+- Everything else: denied.
 
 ### Realtime Database — `firebase.rules.json`
 Must be **manually pasted** into Firebase Console → Realtime Database → Rules.
@@ -284,12 +291,14 @@ Must be **manually pasted** into Firebase Console → Firestore Database → Rul
 ## CSV import format
 
 ```csv
-question,option_a,option_b,option_c,option_d,correct,time_limit
-"What is 2+2?","1","2","3","4","C","30"
+question,option_a,option_b,option_c,option_d,correct,time_limit,image_url
+"What is 2+2?","1","2","3","4","C","30",""
+"Capital of France?","Berlin","Paris","Rome","Madrid","B","20","https://example.com/paris.jpg"
 ```
 
 - `correct`: A/B/C/D or 0/1/2/3 (case-insensitive)
-- `option_c`, `option_d`, `time_limit`: optional
+- `option_c`, `option_d`, `time_limit`, `image_url`: optional
+- `image_url`: any public image URL (external or Firebase Storage); leave blank for no image
 - Download template button available in Quiz Builder
 
 ---

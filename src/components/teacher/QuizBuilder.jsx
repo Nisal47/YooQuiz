@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import QuestionCard from './QuestionCard'
-import CsvImporter from './CsvImporter'
+import QuestionCard   from './QuestionCard'
+import CsvImporter    from './CsvImporter'
+import ImageUrlInput  from '../shared/ImageUrlInput'
 import { buildCsvTemplate } from '../../utils/csvParser'
 
-const BLANK_DRAFT  = { question: '', options: ['', '', '', ''], correctIndex: 0, timeLimit: 30 }
+const BLANK_DRAFT  = { question: '', options: ['', '', '', ''], correctIndex: 0, timeLimit: 30, imageUrl: '' }
 const TIME_OPTIONS = [10, 20, 30, 60]
 const OPT_LABELS   = ['A', 'B', 'C', 'D']
 
@@ -19,6 +20,10 @@ export default function QuizBuilder({ activities, onAdd, onUpdate, onDelete, onR
 
   const totalTime = activities.reduce((s, a) => s + (a.timeLimit || 30), 0)
 
+  function resetForm() {
+    setDraft({ ...BLANK_DRAFT, options: ['', '', '', ''] })
+  }
+
   function handleAddSave() {
     const opts = draft.options.filter(o => o.trim() !== '')
     if (draft.question.trim() === '' || opts.length < 2) return
@@ -27,8 +32,9 @@ export default function QuizBuilder({ activities, onAdd, onUpdate, onDelete, onR
       options:      opts,
       correctIndex: Math.min(draft.correctIndex, opts.length - 1),
       timeLimit:    draft.timeLimit,
+      imageUrl:     draft.imageUrl.trim() || null,
     })
-    setDraft({ ...BLANK_DRAFT, options: ['', '', '', ''] })
+    resetForm()
     setAdding(false)
   }
 
@@ -81,7 +87,7 @@ export default function QuizBuilder({ activities, onAdd, onUpdate, onDelete, onR
       {/* Toolbar */}
       <div className="max-w-3xl mx-auto w-full flex flex-wrap gap-3 mb-6">
         <button
-          onClick={() => { setAdding(true); setDraft({ ...BLANK_DRAFT, options: ['', '', '', ''] }) }}
+          onClick={() => { setAdding(true); resetForm() }}
           className="btn-primary text-sm py-2 px-4"
           disabled={adding}
         >
@@ -109,6 +115,7 @@ export default function QuizBuilder({ activities, onAdd, onUpdate, onDelete, onR
           <div className="card p-5 border border-primary/40 animate-slide-up">
             <h3 className="font-semibold mb-4">New Question</h3>
             <div className="space-y-4">
+              {/* Question text */}
               <textarea
                 rows={2}
                 className="input resize-none"
@@ -117,6 +124,14 @@ export default function QuizBuilder({ activities, onAdd, onUpdate, onDelete, onR
                 placeholder="Enter your question…"
                 autoFocus
               />
+
+              {/* Image URL (optional) */}
+              <ImageUrlInput
+                value={draft.imageUrl}
+                onChange={url => setDraft(d => ({ ...d, imageUrl: url }))}
+              />
+
+              {/* Options */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {draft.options.map((opt, i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -144,6 +159,8 @@ export default function QuizBuilder({ activities, onAdd, onUpdate, onDelete, onR
                   </div>
                 ))}
               </div>
+
+              {/* Time limit */}
               <div className="flex items-center gap-3">
                 <span className="text-xs text-text-secondary">Time</span>
                 <div className="flex gap-2">
@@ -162,8 +179,15 @@ export default function QuizBuilder({ activities, onAdd, onUpdate, onDelete, onR
                   ))}
                 </div>
               </div>
+
+              {/* Actions */}
               <div className="flex gap-3 justify-end">
-                <button onClick={() => setAdding(false)} className="btn-ghost text-sm py-2 px-4">Cancel</button>
+                <button
+                  onClick={() => { setAdding(false); resetForm() }}
+                  className="btn-ghost text-sm py-2 px-4"
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={handleAddSave}
                   disabled={!draft.question.trim() || draft.options.filter(o => o.trim()).length < 2}
@@ -216,7 +240,10 @@ export default function QuizBuilder({ activities, onAdd, onUpdate, onDelete, onR
             <p className="text-text-secondary text-sm mb-6">This cannot be undone.</p>
             <div className="flex gap-3 justify-center">
               <button onClick={() => setConfirm(false)} className="btn-ghost py-2 px-5">Cancel</button>
-              <button onClick={() => { activities.forEach(a => onDelete(a.activityId)); setConfirm(false) }} className="btn-danger py-2 px-5">
+              <button
+                onClick={() => { activities.forEach(a => onDelete(a.activityId)); setConfirm(false) }}
+                className="btn-danger py-2 px-5"
+              >
                 Clear All
               </button>
             </div>
